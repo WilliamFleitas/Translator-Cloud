@@ -2,19 +2,13 @@ import { app, BrowserWindow, ipcMain, Tray, Menu, screen } from 'electron'
 import path, { join } from 'path'
 import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { spawn, ChildProcess, exec } from 'child_process'
+import { spawn, ChildProcess } from 'child_process'
 import fs from 'fs'
 import {
   ApiResponse,
-  AudioLanguageType,
   DeviceType,
   DurationTimeType,
-  HelperNameType,
-  ProcessDevicesType,
   StartStreamingType,
-  WhisperHelpersType,
-  WhisperModelListType,
-  CheckGraphicCardType,
   CheckVoicemeeterIsRunningType
 } from '../preload'
 import textTranslator from './backend/utils/translator/textTranslator'
@@ -431,10 +425,9 @@ ipcMain.handle(
     event,
     device: DeviceType,
     durationTime: DurationTimeType,
-    processDevice: ProcessDevicesType,
-    modelName: WhisperModelListType,
-    audio_language: AudioLanguageType,
+    audio_language: string,
     translation_language: string,
+    deepgram_key: string | undefined,
     subsKey: string | undefined,
     region: string | undefined
   ) => {
@@ -456,8 +449,7 @@ ipcMain.handle(
         scriptPath,
         device,
         durationTime,
-        processDevice,
-        modelName,
+        deepgram_key,
         audio_language
       ])
       let outputData: ApiResponse<StartStreamingType> | null = null
@@ -466,8 +458,9 @@ ipcMain.handle(
       if (startStreamingProcess && startStreamingProcess.stdout && startStreamingProcess.stderr) {
         startStreamingProcess.stdout.on('data', async (data) => {
           const receivedData = data.toString().trim()
+
           try {
-            const response = JSON.parse(receivedData)
+            const response: ApiResponse<StartStreamingType> = JSON.parse(receivedData)
             if (response.success) {
               if (response.data.status !== undefined) {
                 if (response.data.status === 0 || response.data.status === 2) {
@@ -476,13 +469,15 @@ ipcMain.handle(
                     translationOverlayWindow.webContents.send('streaming-data', response)
                   }
                   if (
-                    response.data.transcription !== undefined &&
-                    response.data.transcription.length &&
-                    !translationError
+                    response.data.sentence !== undefined &&
+                    response.data.sentence.length &&
+                    !translationError &&
+                    (response.data.channel_info?.is_final ||
+                      response.data.channel_info?.speech_final)
                   ) {
                     try {
                       const translatedText = await textTranslator(
-                        response.data.transcription,
+                        response.data.sentence,
                         audio_language,
                         translation_language,
                         subsKey,
@@ -564,146 +559,12 @@ ipcMain.handle('stop-streaming', async () => {
   }
 })
 
-ipcMain.handle('check-dependencies', async (event) => {
-  return new Promise((resolve, reject) => {
-    const scriptPath = getScriptPath(['checkGraphicCard.py'], 'checkGraphicCard.py')
-    if (isPackaged && !fs.existsSync(venvPython)) {
-      return reject({
-        success: false,
-        error: `Python executable not found at: ${venvPython}`
-      })
-    }
-    const process = spawn(venvPython, ['-u', scriptPath])
-
-    let outputData: ApiResponse<CheckGraphicCardType>
-
-    process.stdout.on('data', (data) => {
-      const messages = data.toString().trim().split('\n')
-
-      messages.forEach((message) => {
-        try {
-          const response: ApiResponse<CheckGraphicCardType> = JSON.parse(message)
-          if (response.success) {
-            outputData = response
-            if (response.data.status !== undefined && Number(response.data.status) === 2) {
-              if (isPackaged) {
-                app.relaunch()
-                app.exit()
-              } else {
-                exec('npm run dev', (err, stdout, stderr) => {
-                  if (err) console.error('Error trying to reset:', err)
-                  if (stdout) console.log(stdout)
-                  if (stderr) console.error(stderr)
-                })
-                app.exit()
-              }
-            }
-            if (response.data.status !== undefined && Number(response.data.status) === 0) {
-              event.sender.send('check-dependencies-data', response)
-            }
-          } else {
-            throw Error(response.error)
-          }
-        } catch (error: any) {
-          process.kill()
-          return resolve({
-            success: false,
-            error: error instanceof Error ? error.message : String(error)
-          })
-        }
-      })
-    })
-
-    process.stderr.on('data', (data) => {
-      const message = data.toString().trim()
-      console.log('mesagetderr:', message)
-    })
-
-    process.on('error', (error) => {
-      return resolve({ success: false, error: error.message })
-    })
-
-    process.on('close', (code) => {
-      if (code === 0) {
-        resolve(outputData)
-      } else {
-        resolve({ success: false, error: 'Dependency check script failed' })
-      }
-    })
-  })
-})
-
-ipcMain.handle(
-  'whisper-helpers',
-  async (_event, helperName: HelperNameType, model_name?: WhisperModelListType) => {
-    return new Promise((resolve, reject) => {
-      const getModelsPath = 'getAvailableModels.py'
-      const checkInstaledModelsPath = 'downloadModel.py'
-      const scriptPath = getScriptPath(
-        [
-          'whisper',
-          helperName === 'get_available_models' ? getModelsPath : checkInstaledModelsPath
-        ],
-        `whisper/${helperName === 'get_available_models' ? getModelsPath : checkInstaledModelsPath}`
-      )
-
-      if (isPackaged && !fs.existsSync(venvPython)) {
-        return resolve({
-          success: false,
-          error: `Python executable not found at: ${venvPython}`
-        })
-      }
-      const process = spawn(venvPython, ['-u', scriptPath, model_name as WhisperModelListType])
-
-      let outputData: WhisperHelpersType
-
-      process.stdout.on('data', (data) => {
-        const messages = data.toString().trim().split('\n')
-
-        try {
-          const response = JSON.parse(messages)
-          if (response.success) {
-            if (helperName === 'get_available_models') {
-              outputData = { type: helperName, available_models: response.data }
-            } else if (helperName === 'download_model') {
-              outputData = { type: helperName, download_model_status: response.data }
-            }
-          } else {
-            throw Error(response.error)
-          }
-        } catch (error: any) {
-          return resolve({
-            success: false,
-            error: error instanceof Error ? error.message : String(error)
-          })
-        }
-      })
-
-      process.stderr.on('data', (data) => {
-        const message = data.toString().trim()
-        console.log('mesage2tderr:', message)
-      })
-
-      process.on('error', (error) => {
-        return resolve({ success: false, error: error.message })
-      })
-
-      process.on('close', (code) => {
-        if (code === 0) {
-          resolve({ success: true, data: outputData })
-        } else {
-          reject({ success: false, error: `There was an error running ${helperName} script` })
-        }
-      })
-    })
-  }
-)
 ipcMain.handle(
   'get-translation',
   async (
     _event,
     transcription: string,
-    audio_language: AudioLanguageType,
+    audio_language: string,
     translation_language: string,
     subsKey: string | undefined,
     region: string | undefined

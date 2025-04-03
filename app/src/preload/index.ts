@@ -28,68 +28,19 @@ interface SetVCSetupType {
 
 export interface StartStreamingType {
   status: 0 | 1 | 2
-  transcription?: string
+  sentence?: string
+  words?: { word: string }[]
+  channel_info?: {
+    is_final: boolean
+    speech_final: boolean
+    from_finalize: boolean
+  }
   message?: string
-}
-export interface CheckGraphicCardType {
-  gpu_type?: string
-  message?: string
-  interim_message?: string
-  status: number
 }
 
-export interface WhisperHelpersType {
-  type: 'get_available_models' | 'download_model'
-  available_models?: {
-    model: string
-    installed: boolean
-  }[]
-  download_model_status?: {
-    model_name: string
-    status: number
-    message: string
-  }
-}
-export type HelperNameType = 'get_available_models' | 'download_model'
-export type WhisperModelListType =
-  | 'tiny'
-  | 'base'
-  | 'small'
-  | 'medium'
-  | 'large-v1'
-  | 'large-v2'
-  | 'large-v3'
-  | 'large'
-  | 'large-v3-turbo'
-  | 'turbo'
-  | 'tiny.en'
-  | 'base.en'
-  | 'small.en'
-  | 'medium.en'
 export type DeviceType = 'speaker' | 'mic'
-export type ProcessDevicesType = 'cpu' | 'cuda' | 'hip'
 export type DurationTimeType = 'unlimited' | '60' | '600' | '1800' | '3600'
-export type AudioLanguageType =
-  | 'en'
-  | 'es'
-  | 'fr'
-  | 'de'
-  | 'it'
-  | 'pt'
-  | 'ru'
-  | 'ar'
-  | 'zh'
-  | 'ja'
-  | 'ko'
-  | 'hi'
-  | 'tr'
-  | 'pl'
-  | 'nl'
-  | 'sv'
-  | 'da'
-  | 'no'
-  | 'fi'
-  | 'cs'
+
 export type ApiResponse<T> =
   | {
       success: true
@@ -101,18 +52,12 @@ export type ApiResponse<T> =
     }
 
 export interface Api {
-  checkDependencies: () => Promise<ApiResponse<CheckGraphicCardType>>
-  whisperHelpers: (
-    helperName: HelperNameType,
-    model_name?: WhisperModelListType
-  ) => Promise<ApiResponse<WhisperHelpersType>>
   startStreaming: (
     device: DeviceType,
     durationTime: DurationTimeType,
-    processDevice: ProcessDevicesType,
-    modelName: WhisperModelListType,
-    audio_language: AudioLanguageType,
+    audio_language: string,
     translation_language: string,
+    deepgram_key: string | undefined,
     subsKey: string | undefined,
     region: string | undefined
   ) => Promise<ApiResponse<StartStreamingType>>
@@ -126,7 +71,7 @@ export interface Api {
   setVCSetup: (device_name: string) => Promise<ApiResponse<SetVCSetupType>>
   getTranslation: (
     transcription: string,
-    audio_language: AudioLanguageType,
+    audio_language: string,
     translation_language: string,
     subsKey: string | undefined,
     region: string | undefined
@@ -148,19 +93,12 @@ export interface Api {
 }
 
 const api: Api = {
-  checkDependencies: async () => {
-    return await ipcRenderer.invoke('check-dependencies')
-  },
-  whisperHelpers: async (helperName, model_name) => {
-    return await ipcRenderer.invoke('whisper-helpers', helperName, model_name)
-  },
   startStreaming: async (
     device,
     durationTime,
-    processDevice,
-    model_name,
     audio_language,
     translation_language,
+    deepgram_key,
     subsKey,
     region
   ) => {
@@ -168,10 +106,9 @@ const api: Api = {
       'start-streaming',
       device,
       durationTime,
-      processDevice,
-      model_name,
       audio_language,
       translation_language,
+      deepgram_key,
       subsKey,
       region
     )

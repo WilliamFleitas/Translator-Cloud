@@ -1,10 +1,10 @@
 import { Routes, Route, HashRouter, useLocation } from 'react-router-dom'
 import TranslatorPage from './pages/translator/TranslatorPage'
-import CheckDependencies from './pages/checkDependencies/CheckDependencies'
 import { VCContext } from './components/context/VCContext'
 import { AzureSettingsContext } from './components/context/AzureSettingsContext'
 import TranslationOverlay from './pages/translationOverlay/TranslationOverlay'
 import { useEffect } from 'react'
+import { DeepgramSettingsContext } from './components/context/DeepgramSettingsContext'
 
 const PUBLIC_URL = ''
 
@@ -21,14 +21,26 @@ const MainRoutes: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/*" element={<CheckDependencies />} />
-      <Route path="checking-dependencies" element={<CheckDependencies />} />
+      <Route
+        path="/*"
+        element={
+          <VCContext>
+            <AzureSettingsContext>
+              <DeepgramSettingsContext>
+                <TranslatorPage />
+              </DeepgramSettingsContext>
+            </AzureSettingsContext>
+          </VCContext>
+        }
+      />
       <Route
         path="translator"
         element={
           <VCContext>
             <AzureSettingsContext>
-              <TranslatorPage />
+              <DeepgramSettingsContext>
+                <TranslatorPage />
+              </DeepgramSettingsContext>
             </AzureSettingsContext>
           </VCContext>
         }

@@ -10,16 +10,13 @@ import {
   TbTimeDuration0
 } from 'react-icons/tb'
 
-import {
-  AudioLanguageType,
-  AvailableModelsType,
-  DurationTimeType,
-  WhisperModelListType
-} from '@renderer/globalTypes/globalApi'
+import { DurationTimeType } from '@renderer/globalTypes/globalApi'
 import { toast } from 'react-toastify'
 import { VCStatusContext } from '@renderer/components/context/VCContext'
 import DefaultLoading from '@renderer/components/loading/DefaultLoading'
 import { languages } from './TranslatorTextarea'
+import { DeepgramSettingsStatusContext } from '@renderer/components/context/DeepgramSettingsContext'
+import { AzureSettingsStatusContext } from '@renderer/components/context/AzureSettingsContext'
 
 const timeDurationList = [
   {
@@ -50,8 +47,8 @@ const timeDurationList = [
 ]
 
 interface TranslatorControllerPropsType {
+  transcriptionContent: string
   isCapturingAudio: boolean
-  selectedModel: AvailableModelsType | null
   transcriptionIsLoading: boolean
   selectedTranslationLanguage: MenuOptionType
   selectedTranscriptionLanguage: MenuOptionType
@@ -61,12 +58,13 @@ interface TranslatorControllerPropsType {
   setTranslationError: React.Dispatch<React.SetStateAction<string | null>>
   setTranscriptionIsLoading: React.Dispatch<React.SetStateAction<boolean>>
   setTranscriptionError: React.Dispatch<React.SetStateAction<string | null>>
+  setTranscriptionWords: React.Dispatch<React.SetStateAction<string>>
   handleSelectedTranscriptionLanguageChange: (resObj: MenuOptionType) => void
 }
 const TranslatorController = ({
+  transcriptionContent,
   isCapturingAudio,
   selectedTranslationLanguage,
-  selectedModel,
   transcriptionIsLoading,
   selectedTranscriptionLanguage,
   setTranscriptionSentence,
@@ -75,9 +73,16 @@ const TranslatorController = ({
   setTranslationError,
   setTranscriptionError,
   setTranscriptionIsLoading,
+  setTranscriptionWords,
   handleSelectedTranscriptionLanguageChange
 }: TranslatorControllerPropsType): React.ReactElement => {
   const { state } = useContext(VCStatusContext)
+  const {
+    deepgramSettingsState: { APIKey }
+  } = useContext(DeepgramSettingsStatusContext)
+  const {
+    azureSettingsState: { APIKey: azureAPIKey, APIRegion: azureAPIRegion }
+  } = useContext(AzureSettingsStatusContext)
   const audioDevices = [
     {
       label: 'Speaker',
@@ -107,10 +112,6 @@ const TranslatorController = ({
 
   const handleStartRecording = async (): Promise<void> => {
     try {
-      const azureAPIKEY = localStorage.getItem('azureAPIKey')
-      const azureAPIRegion = localStorage.getItem('azureAPIRegion')
-
-      const processDevice = localStorage.getItem('process_device')
       setTranscriptionIsLoading(true)
       setTranscriptionSentence('')
       setTranslationSentence('')
@@ -120,14 +121,11 @@ const TranslatorController = ({
       const response = await window.api.startStreaming(
         selectedAudioDevice.value as 'mic' | 'speaker',
         selectedTimeduration.value as DurationTimeType,
-        processDevice === 'nvidia' ? 'cuda' : processDevice === 'amd' ? 'hip' : 'cpu',
-        selectedModel && selectedModel.model
-          ? (selectedModel.model as WhisperModelListType)
-          : 'tiny',
-        selectedTranscriptionLanguage.value as AudioLanguageType,
+        selectedTranscriptionLanguage.value.toString(),
         selectedTranslationLanguage.value.toString(),
-        azureAPIKEY ? azureAPIKEY : '',
-        azureAPIRegion ? azureAPIRegion : ''
+        APIKey,
+        azureAPIKey,
+        azureAPIRegion
       )
       if (response.success) {
         if (response.data.status !== undefined && response.data.status === 1) {
@@ -138,6 +136,7 @@ const TranslatorController = ({
       }
     } catch (err: any) {
       setIsCapturingAudio(false)
+      console.log('error', err)
       toast.error(`handleStartRecording ${err.message}`, {
         isLoading: false,
         autoClose: 5000
@@ -149,6 +148,8 @@ const TranslatorController = ({
     try {
       await window.api.stopStreaming()
       setIsCapturingAudio(false)
+      setTranscriptionWords('')
+      setTranscriptionSentence(transcriptionContent.slice(0, transcriptionContent.length - 2) + '.')
     } catch (error: any) {
       toast.error(`handleStopRecording ${error.message}`, {
         isLoading: false,
@@ -177,7 +178,7 @@ const TranslatorController = ({
             portal={true}
             position="anchor"
             optionsData={audioDevices}
-            disableButton={selectedModel === null ? true : isCapturingAudio}
+            disableButton={isCapturingAudio}
             currentOption={selectedAudioDevice}
             handleOptionChange={handleSelectedAudioDeviceChange}
             enableArrow={true}
@@ -203,7 +204,7 @@ const TranslatorController = ({
             shift={0}
             portal={true}
             position="initial"
-            disableButton={selectedModel === null ? true : isCapturingAudio}
+            disableButton={isCapturingAudio}
             optionsData={timeDurationList}
             currentOption={selectedTimeduration}
             handleOptionChange={handleCaptureTimeChange}
@@ -236,7 +237,7 @@ const TranslatorController = ({
             shift={0}
             portal={true}
             position="initial"
-            disableButton={selectedModel === null ? true : isCapturingAudio}
+            disableButton={isCapturingAudio}
             optionsData={languages}
             currentOption={selectedTranscriptionLanguage}
             handleOptionChange={handleSelectedTranscriptionLanguageChange}
@@ -270,20 +271,19 @@ const TranslatorController = ({
         ) : (
           <button
             className="bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-4 rounded-md text-lg font-bold uppercase text-white gap-2"
-            title={`${selectedModel === null ? 'First Select a model' : 'Start recording'}`}
+            title={`Start recording`}
             onClick={handleStartRecording}
             type="button"
-            disabled={selectedModel === null ? true : false}
           >
             <FaPlay className="w-5 h-5 text-blue-400" />
           </button>
         )}
       </section>
 
-      {selectedModel === null ? (
+      {APIKey === null || APIKey.length <= 0 ? (
         <div className="absolute top-0 bg-secondary-background/70 w-full h-full left-0 text-center items-center justify-center">
           <strong className="h-full text-center items-center justify-center flex flex-row gap-2 text-lg">
-            <FaLock className="w-5 h-5 " /> Select a model.
+            <FaLock className="w-5 h-5 " /> Deepgram API Key needed.
           </strong>
         </div>
       ) : (

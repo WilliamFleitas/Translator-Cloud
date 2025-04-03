@@ -13,7 +13,7 @@ const useTranslationListener = (): TranslationListener => {
 
   useEffect(() => {
     const handleTranslationData = (_event: unknown, data: string): void => {
-      setTranslationSentence((prev) => prev + data)
+      setTranslationSentence((prev) => prev + data + ', ')
     }
 
     const handleTranslationError = (_event: unknown, data: string): void => {

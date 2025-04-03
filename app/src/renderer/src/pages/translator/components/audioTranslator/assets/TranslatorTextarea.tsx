@@ -1,8 +1,7 @@
-import { AudioLanguageType, AvailableModelsType } from '@renderer/globalTypes/globalApi'
 import { useContext, useEffect, useRef, useState } from 'react'
 import TranslatorController from './TranslatorController'
 import SelectMenu, { MenuOptionType } from '@renderer/components/menu/SelectMenu'
-import { SettingsStatusContext } from '@renderer/components/context/AzureSettingsContext'
+import { AzureSettingsStatusContext } from '@renderer/components/context/AzureSettingsContext'
 
 export const languages = [
   { id: 1, value: 'en', label: 'English' },
@@ -54,38 +53,40 @@ const CustomTextarea = ({
 }
 
 interface TranslatorTextareaPropsType {
+  transcriptionWords: string
   transcriptionContent: string
   translationContent: string
   translationError: string | null
   transcriptionError: string | null
   isCapturingAudio: boolean
   transcriptionIsLoading: boolean
-  selectedModel: AvailableModelsType | null
   setTranscriptionSentence: React.Dispatch<React.SetStateAction<string>>
   setTranslationSentence: React.Dispatch<React.SetStateAction<string>>
   setIsCapturingAudio: React.Dispatch<React.SetStateAction<boolean>>
   setTranslationError: React.Dispatch<React.SetStateAction<string | null>>
   setTranscriptionError: React.Dispatch<React.SetStateAction<string | null>>
   setTranscriptionIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setTranscriptionWords: React.Dispatch<React.SetStateAction<string>>
 }
 const TranslatorTextarea = ({
+  transcriptionWords,
   transcriptionContent,
   translationContent,
   translationError,
   transcriptionError,
   isCapturingAudio,
   transcriptionIsLoading,
-  selectedModel,
   setIsCapturingAudio,
   setTranscriptionSentence,
   setTranslationSentence,
   setTranscriptionIsLoading,
   setTranslationError,
-  setTranscriptionError
+  setTranscriptionError,
+  setTranscriptionWords
 }: TranslatorTextareaPropsType): React.ReactElement => {
   const {
     azureSettingsState: { APIKey, APIRegion }
-  } = useContext(SettingsStatusContext)
+  } = useContext(AzureSettingsStatusContext)
 
   const [text1, setText1] = useState('')
   const [text2, setText2] = useState('')
@@ -107,7 +108,7 @@ const TranslatorTextarea = ({
     if (APIKey.length > 0 && APIRegion.length > 0) {
       const response = await window.api.getTranslation(
         text,
-        selectedTranscriptionLanguage.value.toString() as AudioLanguageType,
+        selectedTranscriptionLanguage.value.toString(),
         selectedTranslationLanguage.value.toString(),
         APIKey,
         APIRegion
@@ -162,7 +163,7 @@ const TranslatorTextarea = ({
     return (): void => {
       setText1('')
     }
-  }, [transcriptionContent])
+  }, [transcriptionContent, transcriptionWords])
   useEffect(() => {
     if (translationContent.length) {
       setText2(translationContent)
@@ -186,7 +187,7 @@ const TranslatorTextarea = ({
         textarea2Ref.current.scrollTop = textarea1Ref.current.scrollHeight
       }
     }
-  }, [text1, text2])
+  }, [text1, text2, transcriptionWords])
   useEffect(() => {
     const getAzureLanguages = (): void => {
       fetch(
@@ -227,7 +228,7 @@ const TranslatorTextarea = ({
         <div className="flex w-full h-full shrink relative ">
           <CustomTextarea
             refValue={textarea1Ref}
-            content={text1}
+            content={`${text1}${transcriptionWords}`}
             disabled={isCapturingAudio}
             handleChange={handleTextarea1Change}
             placeholder="Write here.."
@@ -242,7 +243,7 @@ const TranslatorTextarea = ({
         </div>
         <div className="mt-auto">
           <TranslatorController
-            selectedModel={selectedModel}
+            transcriptionContent={transcriptionContent}
             isCapturingAudio={isCapturingAudio}
             transcriptionIsLoading={transcriptionIsLoading}
             selectedTranslationLanguage={selectedTranslationLanguage}
@@ -253,6 +254,7 @@ const TranslatorTextarea = ({
             setTranslationError={setTranslationError}
             setTranscriptionError={setTranscriptionError}
             setTranscriptionIsLoading={setTranscriptionIsLoading}
+            setTranscriptionWords={setTranscriptionWords}
             handleSelectedTranscriptionLanguageChange={handleSelectedTranscriptionLanguageChange}
           />
         </div>

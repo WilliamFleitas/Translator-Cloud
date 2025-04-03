@@ -16,7 +16,7 @@ const defaultState: AzureSettingsContextType = {
   azureSettingsState: { APIKey: '', APIRegion: '' },
   updateAzureSettingsState: () => {}
 }
-const SettingsStatusContext = createContext<AzureSettingsContextType>(defaultState)
+const AzureSettingsStatusContext = createContext<AzureSettingsContextType>(defaultState)
 
 const AzureSettingsContext: React.FC<AzureProviderProps> = ({ children }) => {
   const [state, setState] = useState<DefaultStateType>(defaultState.azureSettingsState)
@@ -26,10 +26,12 @@ const AzureSettingsContext: React.FC<AzureProviderProps> = ({ children }) => {
   }
 
   return (
-    <SettingsStatusContext.Provider value={{ azureSettingsState: state, updateAzureSettingsState }}>
+    <AzureSettingsStatusContext.Provider
+      value={{ azureSettingsState: state, updateAzureSettingsState }}
+    >
       {children}
-    </SettingsStatusContext.Provider>
+    </AzureSettingsStatusContext.Provider>
   )
 }
 
-export { AzureSettingsContext, SettingsStatusContext }
+export { AzureSettingsContext, AzureSettingsStatusContext }
