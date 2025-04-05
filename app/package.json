@@ -1,7 +1,7 @@
 {
   "name": "translator",
   "version": "1.0.0",
-  "description": "Translator App, using Openai Whisper and Voicemeeter to capture audio from Output Audio",
+  "description": "Translator App, using Deepgram transcriptions, Azure AI Translations and Voicemeeter to capture audio from Output Audio",
   "main": "./out/main/index.js",
   "author": "https://github.com/WilliamFleitas",
   "homepage": "https://github.com/WilliamFleitas/Translator",
