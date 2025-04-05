@@ -14,7 +14,7 @@ import { DurationTimeType } from '@renderer/globalTypes/globalApi'
 import { toast } from 'react-toastify'
 import { VCStatusContext } from '@renderer/components/context/VCContext'
 import DefaultLoading from '@renderer/components/loading/DefaultLoading'
-import { languages } from './TranslatorTextarea'
+import { deepgramLanguages } from './TranslatorTextarea'
 import { DeepgramSettingsStatusContext } from '@renderer/components/context/DeepgramSettingsContext'
 import { AzureSettingsStatusContext } from '@renderer/components/context/AzureSettingsContext'
 
@@ -238,7 +238,7 @@ const TranslatorController = ({
             portal={true}
             position="initial"
             disableButton={isCapturingAudio}
-            optionsData={languages}
+            optionsData={deepgramLanguages}
             currentOption={selectedTranscriptionLanguage}
             handleOptionChange={handleSelectedTranscriptionLanguageChange}
             enableArrow={true}

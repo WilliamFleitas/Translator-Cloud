@@ -28,7 +28,10 @@ const useTranscriptionListener = ({
           if (data.data.status === 0) {
             if (data.data.channel_info?.is_final || data.data.channel_info?.speech_final) {
               setTranscriptionWords('')
-              setTranscriptionSentence((prev) => prev + data.data.sentence + ', ')
+              setTranscriptionSentence(
+                (prev) =>
+                  `${prev}${data.data.sentence}${data.data.sentence && data.data.sentence.length > 0 ? ', ' : ''}`
+              )
             } else {
               setTranscriptionWords(
                 data.data.words?.length ? data.data.words.map((item) => item.word).join(' ') : ''

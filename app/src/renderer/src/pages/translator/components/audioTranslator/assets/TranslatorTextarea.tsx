@@ -3,27 +3,62 @@ import TranslatorController from './TranslatorController'
 import SelectMenu, { MenuOptionType } from '@renderer/components/menu/SelectMenu'
 import { AzureSettingsStatusContext } from '@renderer/components/context/AzureSettingsContext'
 
-export const languages = [
-  { id: 1, value: 'en', label: 'English' },
-  { id: 2, value: 'es', label: 'Spanish' },
-  { id: 3, value: 'fr', label: 'French' },
-  { id: 4, value: 'de', label: 'German' },
-  { id: 5, value: 'it', label: 'Italian' },
-  { id: 6, value: 'pt', label: 'Portuguese' },
-  { id: 7, value: 'ru', label: 'Russian' },
-  { id: 8, value: 'ar', label: 'Arabic' },
-  { id: 9, value: 'zh', label: 'Chinese' },
-  { id: 10, value: 'ja', label: 'Japanese' },
-  { id: 11, value: 'ko', label: 'Korean' },
-  { id: 12, value: 'hi', label: 'Hindi' },
-  { id: 13, value: 'tr', label: 'Turkish' },
-  { id: 14, value: 'pl', label: 'Polish' },
-  { id: 15, value: 'nl', label: 'Dutch' },
-  { id: 16, value: 'sv', label: 'Swedish' },
-  { id: 17, value: 'da', label: 'Danish' },
-  { id: 18, value: 'no', label: 'Norwegian' },
-  { id: 19, value: 'fi', label: 'Finnish' },
-  { id: 20, value: 'cs', label: 'Czech' }
+export const deepgramLanguages = [
+  { id: 0, value: 'detect_language', label: 'Detect Language' },
+  { id: 1, value: 'multi', label: 'Multilingual (Spanish + English)' },
+  { id: 2, value: 'bg', label: 'Bulgarian' },
+  { id: 3, value: 'ca', label: 'Catalan' },
+  { id: 4, value: 'zh', label: 'Chinese (Mandarin, Simplified)' },
+  { id: 5, value: 'zh-CN', label: 'Chinese (Mandarin, Simplified)' },
+  { id: 6, value: 'zh-Hans', label: 'Chinese (Mandarin, Simplified)' },
+  { id: 7, value: 'zh-TW', label: 'Chinese (Mandarin, Traditional)' },
+  { id: 8, value: 'zh-Hant', label: 'Chinese (Mandarin, Traditional)' },
+  { id: 9, value: 'zh-HK', label: 'Chinese (Cantonese, Traditional)' },
+  { id: 10, value: 'cs', label: 'Czech' },
+  { id: 11, value: 'da', label: 'Danish' },
+  { id: 12, value: 'da-DK', label: 'Danish (Denmark)' },
+  { id: 13, value: 'nl', label: 'Dutch' },
+  { id: 14, value: 'en', label: 'English' },
+  { id: 15, value: 'en-US', label: 'English (US)' },
+  { id: 16, value: 'en-AU', label: 'English (Australia)' },
+  { id: 17, value: 'en-GB', label: 'English (UK)' },
+  { id: 18, value: 'en-NZ', label: 'English (New Zealand)' },
+  { id: 19, value: 'en-IN', label: 'English (India)' },
+  { id: 20, value: 'et', label: 'Estonian' },
+  { id: 21, value: 'fi', label: 'Finnish' },
+  { id: 22, value: 'nl-BE', label: 'Flemish (Belgium)' },
+  { id: 23, value: 'fr', label: 'French' },
+  { id: 24, value: 'fr-CA', label: 'French (Canada)' },
+  { id: 25, value: 'de', label: 'German' },
+  { id: 26, value: 'de-CH', label: 'German (Switzerland)' },
+  { id: 27, value: 'el', label: 'Greek' },
+  { id: 28, value: 'hi', label: 'Hindi' },
+  { id: 29, value: 'hu', label: 'Hungarian' },
+  { id: 30, value: 'id', label: 'Indonesian' },
+  { id: 31, value: 'it', label: 'Italian' },
+  { id: 32, value: 'ja', label: 'Japanese' },
+  { id: 33, value: 'ko', label: 'Korean' },
+  { id: 34, value: 'ko-KR', label: 'Korean (South Korea)' },
+  { id: 35, value: 'lv', label: 'Latvian' },
+  { id: 36, value: 'lt', label: 'Lithuanian' },
+  { id: 37, value: 'ms', label: 'Malay' },
+  { id: 38, value: 'no', label: 'Norwegian' },
+  { id: 39, value: 'pl', label: 'Polish' },
+  { id: 40, value: 'pt', label: 'Portuguese' },
+  { id: 41, value: 'pt-BR', label: 'Portuguese (Brazil)' },
+  { id: 42, value: 'pt-PT', label: 'Portuguese (Portugal)' },
+  { id: 43, value: 'ro', label: 'Romanian' },
+  { id: 44, value: 'ru', label: 'Russian' },
+  { id: 45, value: 'sk', label: 'Slovak' },
+  { id: 46, value: 'es', label: 'Spanish' },
+  { id: 47, value: 'es-419', label: 'Spanish (Latin America)' },
+  { id: 48, value: 'sv', label: 'Swedish' },
+  { id: 49, value: 'sv-SE', label: 'Swedish (Sweden)' },
+  { id: 50, value: 'th', label: 'Thai' },
+  { id: 51, value: 'th-TH', label: 'Thai (Thailand)' },
+  { id: 52, value: 'tr', label: 'Turkish' },
+  { id: 53, value: 'uk', label: 'Ukrainian' },
+  { id: 54, value: 'vi', label: 'Vietnamese' }
 ]
 
 interface CustomTextareaPropsType {
@@ -98,7 +133,7 @@ const TranslatorTextarea = ({
   })
   const [overlayIsShowing, SetOverlayIsShowing] = useState<boolean>(false)
   const [selectedTranscriptionLanguage, setSelectedTranscriptionLanguage] =
-    useState<MenuOptionType>(languages[0])
+    useState<MenuOptionType>(deepgramLanguages[0])
   const textarea1Ref = useRef<HTMLTextAreaElement | null>(null)
   const textarea2Ref = useRef<HTMLTextAreaElement | null>(null)
 
@@ -222,6 +257,7 @@ const TranslatorTextarea = ({
 
     getAzureLanguages()
   }, [])
+
   return (
     <div className="flex flex-row flex-wrap lg:flex-nowrap gap-4 min-h-[10rem]  w-full h-fit">
       <div className="flex flex-col rounded-md w-full resize-none shrink  overflow-x-hidden bg-primary-button text-2xl isolate border-secondary-background border">

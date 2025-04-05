@@ -59,8 +59,17 @@ def process_transcriptions(audio_queue, deepgram_key, capture_done_event, audio_
 
             dg_connection.on("error", on_error)
             dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+            options_kwargs = dict(
+                                model="nova-2-general",
+                                encoding="linear16",
+                                sample_rate=RATE,
+                                channels=CHANNELS,
+                                interim_results=True,
+                                )
+            if audio_language != "detect_language":
+                options_kwargs["language"] = audio_language
 
-            options = LiveOptions(model="enhanced", encoding="linear16", sample_rate=RATE, channels=CHANNELS, interim_results=True, language=audio_language)
+            options = LiveOptions(**options_kwargs)
 
             if not dg_connection.start(options):
                 raise Exception("Failed to start connection with Deepgram. Check API Key or network connection.")
